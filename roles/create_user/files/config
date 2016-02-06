@@ -1,0 +1,8 @@
+Host *
+ ForwardAgent yes
+ Compression yes
+ StrictHostKeyChecking no
+ CheckHostIP no
+ UserKnownHostsFile /dev/null
+ LogLevel ERROR
+ ForwardX11 no

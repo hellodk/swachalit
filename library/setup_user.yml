@@ -1,0 +1,7 @@
+---
+
+- hosts: create_user # this is the remote system ip, need to be replaced
+  sudo: yes
+  remote_user: "billa"
+  roles:
+    - create_user
