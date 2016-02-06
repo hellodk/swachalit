@@ -1,0 +1,5 @@
+1. Authorized keys must be present or first time setup will be via password
+2. roles path should be defined
+3. sshpass program should be present
+4. put your desired keys in the files directory
+5. 
