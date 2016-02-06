@@ -1,0 +1,44 @@
+---
+
+- name: Install apt-package dependencies
+  apt: >
+    name="{{ item }}"
+    state="present"
+    cache_valid_time={{ apt_cache_time }}
+    force=yes
+  with_items:
+    - python-pip
+    - python-pycurl
+    - python-dev 
+    - git
+    - python-setuptools
+    - supervisor
+    - unzip
+    - gunicorn
+    - nginx
+
+- name: Create web app directroy - /srv/web_app
+  file: >
+    path="/srv/web-app/"
+    state="directory"
+    owner={{ hell_cat_user }}
+    group={{ hell_cat_group }}
+
+- name: Cloning the web_app repo
+  sudo: no
+  git: >
+    repo="git@github.com:hellodk/login_page.git"
+    dest="/srv/web_app/"
+    accept_hostkey=yes
+    force=yes
+    depth=1
+    version="{{ git_tag }}"
+
+- name: Installing pip requirements.
+  pip: requirements="/srv/web_app/requirements.txt"
+
+# - name: Copy the supervisor configuration file
+#   copy: >
+#     src=
+#     dest=
+

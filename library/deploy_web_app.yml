@@ -1,0 +1,7 @@
+---
+
+- hosts: web_app # this is the remote system ip, need to be replaced
+  sudo: yes
+  remote_user: "billa"
+  roles:
+    - deploy_web_app
