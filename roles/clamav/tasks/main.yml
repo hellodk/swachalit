@@ -1,0 +1,85 @@
+---
+
+- name: "Create clamav group"
+  group: >
+    name="clamav"
+    state="present"
+
+- name: "Create clamav user"
+  user: >
+    name="clamav"
+    group="clamav"
+    createhome=no
+    comment="clamav user"
+    state="present"
+
+- name: "Create clamav directories"
+  file: >
+    path={{ item }}
+    state="directory"
+    owner="clamav"
+    group="clamav"
+    mode=0755
+  with_items:
+    - "/var/clamav"
+    - "/var/log/clamav"
+    - "/var/lib/clamav"
+
+- name: Install  clamav build dependent packages
+  yum:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - gcc
+    - libxml2-devel
+    - openssl
+    - openssl-devel
+
+- name: Copy the clamav file to remote machine
+  copy: src={{ item.src }} dest={{ item.dest }}
+  with_items:
+    - { src: 'freshclam.conf', dest: '/usr/local/etc/' }
+    - { src: 'clamav-0.99.3.tar.gz', dest: '/tmp' }
+
+- name: Extract clamav-0.99.3.tar.gz to /tmp
+  unarchive:
+    src: clamav-0.99.3.tar.gz
+    dest: /tmp
+
+- name: Configure clamav
+  command: "./configure" # && make && make install
+  args:
+    chdir: "/tmp/clamav-0.99.3"
+
+- name: make clamav
+  command: "make"
+  args:
+    chdir: "/tmp/clamav-0.99.3"
+
+- name: make install clamav
+  command: "make install"
+  args:
+    chdir: "/tmp/clamav-0.99.3"
+
+- name: Set cron for updating clamav
+  cron:
+    name: "Update clamav every day at 23:05 minutes"
+    user: "{{ sysadmin_user }}"
+    minute: "*/5"
+    hour: "23"
+    job: "/usr/local/bin/freshclam >> /var/log/clamav/freshclam.log"
+
+- name: Start clamav
+  command: "/usr/local/bin/freshclam"
+  retries: 3
+  delay: 3
+  register: result
+  until: result.rc == 0
+
+- name: Set cron for virus scan
+  cron:
+    name: "Virus scan checks"
+    user: "{{ sysadmin_user }}"
+    minute: "*/5"
+    hour: "11,23"
+    job: "/usr/local/bin/clamscan >> /var/log/clamav/clamscan.log"

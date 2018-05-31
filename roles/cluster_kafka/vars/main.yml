@@ -1,0 +1,2 @@
+---
+kafka_hosts: "{{ansible_fqdn}}:9092"

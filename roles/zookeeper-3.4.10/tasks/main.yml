@@ -1,0 +1,87 @@
+---
+
+- name: Printing the list of affected hosts
+  debug: msg= "{{ inventory_hostname }}"
+
+- name: "Upgrade all packages"
+  yum:
+    name: '*'
+    state: latest
+
+- name: "Install Development tools package group"
+  yum:
+    name: "{{ item }}" #"java-1.8.0-openjdk.x86_64"
+    state: present
+  with_items:
+    - java-1.8.0-openjdk.x86_64
+    - bash-completion
+
+- name: "Create zookeeper group"
+  group:
+    name: "zookeeper"
+    state: "present"
+
+- name: "Create zookeeper user"
+  user:
+    name: "zookeeper"
+    group: "zookeeper"
+    comment: "zookeeper user"
+    state: "present"
+
+- name: "Copy Zookeeper tar file on remote machine"
+  copy:
+    src: "zookeeper-3.4.10.tar.gz"
+    dest: "/tmp"
+
+- name: "Extract the tar gz file"
+  unarchive:
+    src: /tmp/zookeeper-3.4.10.tar.gz
+    dest: "/opt"
+    group: "zookeeper"
+    owner: "zookeeper"
+    copy: no
+
+- name: "Create symnlink for ZooKeeper"
+  file:
+    src: "/opt/zookeeper-3.4.10"
+    dest: "/opt/zookeeper"
+    state: "link"
+    owner: "zookeeper"
+    group: "zookeeper"
+    force: yes
+
+- name: Create Zookeeper data directory
+  file:
+    path: "{{ item }}"
+    state: "directory"
+    owner: zookeeper
+    group: zookeeper
+  with_items:
+    - "/var/lib/zookeeper"
+    - "/var/log/zookeeper"
+
+- name: Create Zookeeper id file
+  file:
+    path: "{{ item }}"
+    state: "touch"
+    owner: zookeeper
+    group: zookeeper
+    mode: 0775
+  with_items:
+    - "/var/lib/zookeeper/myid"
+    - "/opt/zookeeper/conf/zookeeper.properties"
+
+- name: Copy configuration over
+  template: src=zookeeper_conf.j2 dest=/opt/zookeeper-3.4.10/conf/zoo.cfg mode=0644
+  
+- name: Install the Zookeeper service handler
+  copy: src=zookeeper_init dest=/etc/init.d/zookeeper mode=0755
+
+# - name: Run Zookeeper via init.d
+#   service: name=zookeeper state=started enabled=yes
+
+# - name: Run Zookeeper via init.d
+#   service: name=zookeeper state=enabled
+
+# - name: Run Zookeeper via systemd
+  # systemd: state=started name=zookeeper

@@ -1,0 +1,74 @@
+---
+- name: Copy kibana-4.0.1-linux-x64.tar.gz file to /tmp
+  copy: >
+   src="kibana-4.0.1-linux-x64.tar.gz"
+   dest="/tmp"
+
+- name: Install apt-packages
+  apt: >
+    name="{{ item }}"
+    state="present"
+    cache_valid_time={{ apt_cache_time }}
+    force=yes
+  with_items:
+    - nginx
+    - apache2-utils
+
+- name: Extract the tar file
+  shell: "tar xvf kibana-4.0.1-linux-x64.tar.gz -C /opt"
+  args:
+    chdir: "/tmp"
+    creates: "/opt/kibana-4.0.1-linux-x64"
+
+- name: Create softlinks - scripts
+  file: >
+    src="/opt/kibana-4.0.1-linux-x64"
+    dest="/opt/kibana"
+    state=link
+    force=yes
+
+- name: Copy kibana init to /etc/init.d
+  copy: >
+   src="kibana4"
+   dest="/etc/init.d"
+   mode="0777"
+
+- name: Copy kibana configuration to /opt/kibana/
+  copy: >
+   src="kibana.yml"
+   dest="/opt/kibana/config"
+   mode="0777"
+
+- name: "Disable default nginx conf"
+  file: >
+    path="/etc/nginx/sites-enabled/default"
+    state=absent
+  notify: restart nginx
+
+- name: Copy nginx config file
+  copy: >
+   src="kibana_nginx_conf"
+   dest="/etc/nginx/sites-available/"
+
+- name: "Enable website conf in nginx"
+  file: >
+   src="/etc/nginx/sites-available/kibana_nginx_conf"
+   dest="/etc/nginx/sites-enabled/kibana_nginx_conf"
+   state=link
+  notify: restart nginx
+
+- name: Update and start kibana service
+  shell: "update-rc.d kibana4 defaults 96 9"
+
+- name: Ensure kibana is started
+  service: name=kibana4 state=started enabled=yes
+
+- name: Ensure nginx is started
+  service: name=nginx state=started enabled=yes
+
+
+
+
+
+
+

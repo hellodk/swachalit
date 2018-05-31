@@ -1,0 +1,6 @@
+{% if kafka_broker_id is defined %}
+broker.id={{ kafka_broker_id }}
+{% endif %}
+
+advertised.host.name={{ inventory_hostname }}
+zookeeper.connect={{ groups["kafka"] | join(":2181,") }}:2181

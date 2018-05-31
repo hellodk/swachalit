@@ -1,0 +1,47 @@
+---
+
+- name: Printing the list of affected hosts
+  debug: msg= "{{ inventory_hostname }}"
+
+- name: "Upgrade all packages"
+  yum:
+    name: '*'
+    state: latest
+
+- name: "Copy kafka init script"
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: 0755
+  with_items:
+    - { src: 'kafka_init_script', dest: '/etc/init.d/kafka' }
+    - { src: 'kafka_2.11-1.0.0.tgz', dest: '/tmp'}
+
+- name: "Extract the tar gz file"
+  unarchive: >
+    src=/tmp/kafka_2.11-1.0.0.tgz
+    dest="/opt"
+    copy=no
+
+- name: "Create a softlink for kafka"
+  file:
+    src: "kafka_2.11-1.0.0"
+    dest: "/opt/kafka"
+    state: link
+
+- name: "Create log directory for kafka"
+  file:
+    dest: "/var/log/kafka"
+    state: directory
+    mode: 0755
+
+- name: "Create log directory for kafka"
+  file:
+    dest: "/var/log/kafka/console.log"
+    state: touch
+
+# - name: Run the kafka service
+#   service: name=kafka state=started enabled=yes
+
+# - name: Run the kafka service
+#   systemd: state=started name=kafka

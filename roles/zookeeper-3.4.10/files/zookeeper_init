@@ -1,0 +1,40 @@
+#!/bin/bash
+
+### BEGIN INIT INFO
+# Provides:        tomcat7
+# Required-Start:  $network
+# Required-Stop:   $network
+# Default-Start:   2 3 4 5
+# Default-Stop:    0 1 6
+# Short-Description: Start/Stop Tomcat server
+### END INIT INFO
+
+USER="zookeeper"
+APP=/opt/zookeeper/bin/zkServer.sh
+CONF=/opt/zookeeper/conf/zookeeper.properties
+
+start() {
+ /bin/su -l zookeeper $APP start $CONF
+}
+
+stop() {
+ /bin/su -l zookeeper $APP stop $CONF
+}
+
+restart()
+{
+	/bin/su -l zookeeper $APP stop $CONF
+	sleep 5
+	/bin/su -l zookeeper $APP start $CONF
+}
+
+status()
+{
+	/bin/su -l zookeeper $APP status
+}
+case $1 in
+  start|stop) $1;;
+  restart) stop; start;;
+  status) status;;
+  *) echo "Run as $0 <start|stop|restart|status>"; exit 1;;
+esac

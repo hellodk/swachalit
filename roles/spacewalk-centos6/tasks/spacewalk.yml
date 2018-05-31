@@ -1,0 +1,54 @@
+---
+  - hosts: spacewalk
+    remote_user: sysops
+    gather_facts: yes
+    become: yes
+    tasks:
+      - name: install spacewalk-client-repo 
+        yum:
+          name: http://yum.spacewalkproject.org/2.7-client/RHEL/6/x86_64/spacewalk-client-repo-2.7-2.el6.noarch.rpm
+          state: present
+        when: ansible_distribution == 'CentOS' and ansible_distribution_major_version == '6'
+
+      - name: install epel
+        yum:
+          name: http://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm
+          state: present
+        when: ansible_distribution == 'CentOS' and ansible_distribution_major_version == '6'
+
+      - name: install spacewalk client packages
+        yum:
+          name: "{{ item  }}"
+          state: installed
+        with_items:
+          - "rhn-client-tools"
+          - "rhn-check"
+          - "rhn-setup"
+          - "rhnsd"
+          - "m2crypto"
+          - "yum-rhn-plugin"
+          - "osad"
+        when: ansible_distribution == 'CentOS' and ansible_distribution_major_version == '6'
+
+      - name: Delete /etc/hostname file from CentOS-6
+        file: path=/etc/hostname state=absent
+        when: ansible_distribution == 'CentOS' and ansible_distribution_major_version == '6'
+        ignore_errors: yes
+
+      - name: install spacewalk ssl cert 
+        yum:
+          name: http://myntcloud-spacewalk-server.myntra.com/pub/rhn-org-trusted-ssl-cert-1.0-1.noarch.rpm
+          state: present
+        when: ansible_distribution == 'CentOS' and ansible_distribution_major_version == '6'
+
+      - name: register with Spacewalk 
+        command: /usr/sbin/rhnreg_ks --serverUrl=https://myntcloud-spacewalk-server/XMLRPC --sslCACert=/usr/share/rhn/RHN-ORG-TRUSTED-SSL-CERT --activationkey=1-d58313673da2b30ddb9f9cf0ac5c8b60
+        when: ansible_distribution == 'CentOS' and ansible_distribution_major_version == '6'
+
+      - name: Restart rhnsd
+        service: name=rhnsd state=restarted enabled=yes
+        when: ansible_distribution == 'CentOS' and ansible_distribution_major_version == '6'
+
+      - name: Restart osad
+        service: name=osad state=restarted enabled=yes
+        when: ansible_distribution == 'CentOS' and ansible_distribution_major_version == '6'
