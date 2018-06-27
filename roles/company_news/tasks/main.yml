@@ -1,5 +1,96 @@
 ---
-- name: Install java8
+
+- name: "Create tomcat group"
+  group: >
+    name="tomcat"
+    state="present"
+
+- name: "Create tomcat user"
+  user: >
+    name="tomcat"
+    group="tomcat"
+    home="/opt/tomcat"
+    createhome=yes
+    move_home=yes
+    comment="tomcat user"
+    shell="/sbin/nologin"
+    state="present"
+
+- name: "Ensure home directory ownership is correct"
+  file:
+    path="/home/tomcat/"
+    owner="tomcat"
+    group="tomcat"
+    state="directory"
+
+- name: Install dependent packages
   yum:
-    name: java-1.8.0-openjdk-devel
+    name: "{{ item }}"
     state: present
+  with_items:
+    - epel-release
+    - unzip
+
+#- name: "Upgrade all packages"
+#  yum:
+#    name: '*'
+#    state: latest
+
+- name: Install dependent packages
+  yum:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - epel-release
+    - java-1.8.0-openjdk-devel
+    - haveged
+
+- name: Create directories
+  file:
+    path: "{{ item }}"
+    state: "directory"
+    owner: tomcat
+    group: tomcat
+  with_items:
+    - "/opt/tomcat"
+    - "/Users/dcameron/persistence"
+
+- name: "Copy dependent files"
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: 0755
+  with_items:
+    - { src: 'apache-tomcat-8.5.32.tar.gz', dest: '/tmp'}
+    - { src: 'static.zip', dest: '/tmp'}
+    - { src: 'companyNews.war', dest: '/tmp' }
+    - { src: 'tomcat.service', dest: '/etc/systemd/system' }
+
+- name: "Extract the tomcat tar.gz file"
+  unarchive:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    copy: no
+    owner: tomcat
+    group: tomcat
+    extra_opts: [--strip-components=1]
+  with_items:
+    - { src: '/tmp/apache-tomcat-8.5.32.tar.gz', dest: '/opt/tomcat'}
+
+- name: "Copy the war files"
+  copy:
+    src: companyNews.war
+    dest: /opt/tomcat/webapps
+    #- { src: 'companyNews.war', dest: '/opt/tomcat/webapps' }
+
+- name: Run the tomcat service
+  systemd: state=restarted name=tomcat.service
+
+- name: "Copy static files"
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: 0755
+  with_items:
+    - { src: 'images', dest: '/opt/tomcat/webapps/companyNews'}
+    - { src: 'styles', dest: '/opt/tomcat/webapps/companyNews'}
