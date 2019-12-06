@@ -1,0 +1,9 @@
+---
+
+- name: Creating Templates Demo
+  template:
+    src: tem.j2
+    dest: /home/centos/myfile
+    owner: centos
+    group: centos
+    mode: 755
