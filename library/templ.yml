@@ -1,0 +1,7 @@
+---
+
+- hosts: workers # this is the remote system ip, need to be replaced
+  become: yes
+  remote_user: "centos"
+  roles:
+    - templ
